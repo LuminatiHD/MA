@@ -30,8 +30,8 @@ class Map():
         if xy > self.__size:
             raise TypeError("blob coordinates are outside the map space")
         x_rel, y_rel = xy
-        for row in self.__vals[max(x_rel-radius, 0):min(x_rel + radius, self.__xlen)]:
-            for pixel in row:
+        for row in self.__vals[y_rel-radius:y_rel + radius]:
+            for pixel in row[x_rel-radius:x_rel + radius]:
                 if (pixel.x-x_rel)**2 + (pixel.y-y_rel)**2 < radius**2:
                     pixel.changeval(128)
 
