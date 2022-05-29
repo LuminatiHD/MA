@@ -1,5 +1,17 @@
 from scipy.spatial import Voronoi
 
+class Pixel():
+    def __init__(self, xy:tuple[int, int], val:float | int=0):
+        self.val = val
+        self.__pos = xy
+        self.x, self.y = xy
+
+    def __repr__(self):
+        return "P" + f"({self.__pos}, v={self.val})"
+
+    def changeval(self, newval:float | int):
+        """change the value of the pixel to a given parameter"""
+        self.val = newval
 
 class Map():
     def __init__(self, size:tuple[int, int]):
@@ -11,7 +23,7 @@ class Map():
     def __repr__(self):
         return self.__class__.__name__ + f"({self.__size})"
 
-    def __getitem__(self, pos:slice | int):
+    def __getitem__(self, pos:slice | int) -> Pixel:
         if type(pos) == int:
             # if only a start value is given (pos is an int), that means that
             # we will only return the corresponding row
@@ -37,15 +49,3 @@ class Map():
                     pixel.changeval(128)
 
 
-class Pixel():
-    def __init__(self, xy:tuple[int, int], val:float | int=0):
-        self.val = val
-        self.__pos = xy
-        self.x, self.y = xy
-
-    def __repr__(self):
-        return "P" + f"({self.__pos}, v={self.val})"
-
-    def changeval(self, newval:float | int):
-        """change the value of the pixel to a given parameter"""
-        self.val = newval
