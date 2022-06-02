@@ -13,7 +13,7 @@ map.fill_polygon((0, 0), (0, 5), (10, 10), (10, 0), val=100)
 A = np.zeros([200, 200])
 for y in range(0, 200):
     for x in range(0, 200):
-        value = map[x:y].val
+        value = map[x, y].val
         color = int((value + 1) * 128)
         A[x, y] = color
 

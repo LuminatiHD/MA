@@ -7,7 +7,6 @@
 #
 # map = assets.Map((200, 200))
 # V = Voronoi([[randint(0, 200), randint(0, 200)] for i in range(50)], qhull_options="Qc")
-# """the voronoi thing is broken as fuck jesus motherfucking christ good luck"""
 # for i in range(len(V.points)):
 #     region = tuple(tuple(V.vertices[j]) for j in V.regions[tuple(V.point_region)[i]])
 #     point = V.points[i]
@@ -30,7 +29,7 @@
 # A = np.zeros([200, 200])
 # for y in range(0, 200):
 #     for x in range(0, 200):
-#         value = map[x:y].val
+#         value = map[x, y].val
 #         color = int((value + 1))
 #         A[x, y] = color
 #

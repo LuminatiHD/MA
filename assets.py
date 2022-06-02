@@ -15,6 +15,7 @@ class Pixel():
         """change the value of the pixel to a given parameter"""
         self.val = newval
 
+
 class Map():
     def __init__(self, size:tuple[int, int]):
         self.__vals = tuple(tuple(Pixel((x, y)) for x in range(size[0])) for y in range(size[1]))
@@ -25,20 +26,15 @@ class Map():
     def __repr__(self):
         return self.__class__.__name__ + f"({self.__size})"
 
-    def __getitem__(self, pos:slice | int) -> Pixel|tuple:
-        if type(pos) == int:
-            # if only a start value is given (pos is an int), that means that
-            # we will only return the corresponding row
-            return self.__vals[pos]
-        elif pos.start is None:
-            # in the same way, if there is no start value, we just want the column
-            return tuple(p[pos.stop] for p in self.__vals)
+    def __getitem__(self, pos:tuple[int, int]) -> Pixel:
+        if not 1<len(pos):
+            raise TypeError("A point needs 2 coordinate values")
         else:
             # if both the start and stop value are given [x:y], then we will just return a point
-            if abs(pos.stop) < 200 and abs(pos.start) < 200:
-                return self.__vals[pos.stop][pos.start]
+            if abs(pos[0]) < 200 and abs(pos[0]) < 200:
+                return self.__vals[pos[1]][pos[0]]
             else:
-                return Pixel((pos.start, pos.stop), val=0)
+                return Pixel(pos, val=0)
 
     def getvals(self):
         return self.__vals
@@ -59,8 +55,9 @@ class Map():
         p = Polygon(shell=args)
         x_vals = tuple(int(i[0]) for i in args)
         y_vals = tuple(int(i[1]) for i in args)
+        # iterate only over the pixel in the bounding box
         for x in range(max(min(x_vals), 0), min(max(x_vals), self.__xlen)):
             for y in range(max(min(y_vals), 0), min(max(y_vals), self.__ylen)):
                 if p.contains(Point(x, y)):
-                    self[x:y].val = val
+                    self[x, y].val = val
 
