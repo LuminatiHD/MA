@@ -7,8 +7,8 @@ import opensimplex
 from opensimplex import OpenSimplex
 
 map = assets.Map((200, 200))
-map.blob((50, 25), 20)
 
+map.fill_polygon((0, 0), (0, 5), (10, 10), (10, 0), val=100)
 
 A = np.zeros([200, 200])
 for y in range(0, 200):
