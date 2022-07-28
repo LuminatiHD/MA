@@ -1,6 +1,47 @@
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, Point
-from typing import Iterable
+from typing import Iterable, Literal
+import numpy as np
+import copy
+
+
+def getborderpointbyvector(p: np.ndarray[int | float, int | float],
+                           v: np.ndarray[int | float, int | float],
+                           polygon: Polygon, threshold: float = 0.01) -> np.ndarray[int | float, int | float]:
+    """
+    Berechnet, wie weit man von einem Punkt P in einem polygon PG in Richtung v schreiten kann, ohne über das
+    Polygon PG hinauszutreten. Genauer berechnet es einen Punkt R, der auf der Grenze des Polygon PG und von Punkt P aus
+    in Richtung v liegt.
+    :param p: der Punkt, wovon aus der Vektor sich bewegt
+    :param v: Die Richtung, in welcher der Zielpunkt R liegt
+    :param polygon: Das Polygon PG an welcher Grenze der Zielpunkt liegt
+    :param threshold: wie nahe die Ausgabe am richtigen PUnkt liegen soll
+    :return:
+    """
+    delta = 1
+    s = 0
+
+    # Teil 1: der Vektor wird so lange verlängert bis er ausserhalb des Polygons ist.
+    new_s = s + delta
+    new_p = p+v*new_s
+    while polygon.contains(Point(new_p)):
+        new_s = s+delta
+        new_p = p+v*new_s
+
+        if not polygon.contains(Point(new_p)):
+            break
+        else:
+            s = new_s
+    # Teil 2: der Vektor nähert sich dem Resultat
+    while delta>threshold:
+        delta/=2
+        print(delta)
+        new_s = s+delta
+        new_p = p+v*new_s
+        if polygon.contains(Point(new_p)):
+            s = new_s
+    return new_p
+
 
 class Pixel():
     def __init__(self, xy:tuple[int, int], val:float | int=0):
