@@ -43,6 +43,58 @@ def getborderpointbyvector(p: np.ndarray[int | float, int | float],
     return new_p
 
 
+def getPointOnLinesegment(P: np.ndarray[int | float, int | float],
+                          v: np.ndarray[int | float, int | float],
+                          R1: np.ndarray[int | float, int | float],
+                          R2: np.ndarray[int | float, int | float]) -> np.ndarray[int | float, int | float] | None:
+    """Gibt an, ob und wo ein Strahl S von Punkt P aus Richtung v eine Linie R1-R2 überschneidet. Überschneidet es nicht,
+    gibt die Funktion None zurück.
+    Specifics werden erklärt in https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line_segment
+    :param P: Ursprungspunkt des Strahls S
+    :param v: Richtung des Strahls S
+    :param R1, R2: definiert die Linie R1-R2"""
+
+    P1 = P
+    P2 = P+v
+
+    u = ((P1[0]-R1[0])*(P1[1]-P2[1])-(P1[0]-P2[0])*(P1[1]-R1[1])) / ((P1[0]-P2[0])*(R1[1]-R2[1]) - (R1[0]-R2[0])*(P1[1]-P2[1]))
+    # existiert ein Intersection-point Q zwischen R1-R2 und Strahl P Richtung v, dann ist dieser Punkt Q = R1+u*(R2-R1).
+    # falls der Punkt Q zwischen R1 und R2 liegt, dann ist folglich 0<=u<=1.
+    # fals demnach u>1 oder u<0, dann liegt Q nicht auf dem Liniensegment R1-R2
+    if not 0<=u<=1:
+        return None
+    else:
+        return R1 + u*(R2-R1)
+
+
+def direction_preference(options:Iterable[np.ndarray[int | float, int | float]],
+                         ideal:np.ndarray[int | float, int | float]) -> np.ndarray[int | float, int | float]:
+    """Nimmt von Optionen Vektor opt_1 und opt_2 diese, die am ehesten dem Vektor v gleicht/in die gleiche Richtung zeigt.
+    :param opt_1, opt_2: oben genannte Optionen, beides Vektoren
+    :param ideal: Der ideale Vektor V"""
+
+
+    options_key = dict()
+    for opt in options:
+        # Optionsvektoren werden normalisiert -> abs(O_1) = 1
+        opt_norm = opt/np.linalg.norm(opt)
+        options_key[opt_norm] = opt
+    # das Skalarprodukt zweier Vektoren a, b ist cos(Winkel(a, b))*|a|*|b|.
+    # Wenn jedoch die Wahl zwischen a1 und a2 besteht und |a1|>|a2| kann das das Resultat verfälschen, da a2 näher an v sein kann, aber immer noch a1*v > a2*v.
+    # darum müssen die Vektoren a1 und a2 die gleiche Länge haben, damit es fair ist.
+
+    # je näher 2 Vektoren zueinander sind/je mehr sie in die gleiche Richtung zeigen, desto grösser ist ihr Skalarprodukt.
+    # die Funktion vergleicht die Skalarprodukte (engl: dot-product) des Idealvektors und den jeweiligen Optionen und nimmt den Vektor, der das grösste hat -> am nähesten am Idealvektor dran ist.
+    dot_products = dict()
+    for opt in options_key.keys():
+        dot_products[ideal.dot(opt)] = opt
+
+    return options_key[dot_products[max(dot_products)]]
+    # das dict dot_products speichert die dot_produkte als key und die korrespondierenden Normalvektoren als value.
+    # max(dot_products) gibt den höchsten Wert unter den Key des dicts dot_products zurück.
+    # dot_products[max] gibt den korrespondierenden Normalvektor zurück. Wir brauchen jedoch den richtigen Vektor, nicht der normalisierte
+    # options_key[norm] gibt den originalen, nicht-normalisierter Vektor zurück.
+
 class Pixel():
     def __init__(self, xy:tuple[int, int], val:float | int=0):
         self.val = val
