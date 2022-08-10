@@ -95,14 +95,6 @@ def direction_preference(options:Iterable[np.ndarray[int | float, int | float]],
     # dot_products[max] gibt den korrespondierenden Normalvektor zurück. Wir brauchen jedoch den richtigen Vektor, nicht der normalisierte
     # options_key[norm] gibt den originalen, nicht-normalisierter Vektor zurück.
 
-class Pixel():
-    def __init__(self, xy:tuple[int, int], val:float | int=0):
-        self.val = val
-        self.__pos = xy
-        self.x, self.y = xy
-
-    def __repr__(self):
-        return "P" + f"({self.__pos}, v={self.val})"
 
     def changeval(self, newval:float | int):
         """change the value of the pixel to a given parameter"""
