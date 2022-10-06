@@ -5,12 +5,26 @@ from typing import Literal, Iterable
 from shapely.geometry import Polygon, Point
 import random as rand
 from assets import getPointOnLinesegment, organic_border
+from math import pi
 
 
-class Plate():
+def create_rays(amount:int) -> tuple[np.ndarray]:
+    """Gibt ein tuple zurück mit n Vektoren, die einen Punkt umkreisen.
+    :param amount: die Menge der Vektoren"""
+    out = list()
+    phi = 2*pi/amount
+    for i in range(amount):
+        v = np.array((np.sin(phi*i+.5), np.cos(phi*i+.5)))
+        out.append(v)
+
+    return tuple(out)
+
+
+class Plate:
     """Ist definiert als eine liste an vertices, einem PlatePoint, sowie einem drift-vektor"""
     def __init__(self, point: np.ndarray[int, int], vertices: Iterable[tuple[int, int]],
                  PType: Literal["K", "O"], drift: np.array = np.array((0, 0))):
+
         self.vertices = tuple(tuple(i) for i in vertices) # gibt man direkt np.arrays ins tuple, dann funktioniert tuple.index nicht mehr
         self.Plate_point = point
         self.drift_vector = drift
@@ -20,7 +34,7 @@ class Plate():
             self.PType = PType
 
     def __repr__(self):
-        pass
+        return str(self.vertices)
 
     def split(self, point:np.ndarray[int|float, int|float], t:float)  -> tuple[Plate, Plate]:
         """Trennt die Platte entlang einer Mittelsenkrechte zwischen dem Plattenpunkt und dem gegebenen punkt point.
@@ -47,7 +61,7 @@ class Plate():
                 Border_to_Poly[tuple(Q)] = (E1, E2)
 
         # Die Platten werden wieder zusammengesetzt
-        Border = organic_border(np.array(list(Border_to_Poly.keys())[0]), np.array(list(Border_to_Poly.keys())[1]))
+        Border = organic_border(np.array(list(Border_to_Poly.keys())[0]), np.array(list(Border_to_Poly.keys())[1]), Polygon(self.vertices))
 
         start_P = Border[0]
         end_P = Border[-1]
@@ -113,47 +127,3 @@ class Plate():
 
 
 
-class World():
-    """Der Container für die Platten"""
-    def __init__(self, size:tuple[int, int], plates:Iterable[Plate] | None = None):
-        self.size = size
-        if plates:
-            self.plates = list(plates)
-        else:
-            self.plates = [Plate(point = np.array((size[0]/2, size[1]/2)),
-                                 vertices=((0, 0), (0, size[1]), (size[0], size[1]), (size[0], 0)),
-                                 PType="K")]
-
-        self.age = 1
-
-    def getPlate(self, point:np.ndarray[int, int]) -> Plate:
-        """gibt an, in welcher Platte der angegebene Punkt enthalten ist."""
-        selected_plate = None
-        # es werden alle plates durchgeloopt bis die Platte gefunden ist, in der der Punkt enthalten ist.
-        for plate in self.plates:
-            if Polygon(plate.vertices).contains(Point(point)):
-                selected_plate = plate
-                return selected_plate
-
-        # es kann theoretisch möglich sein, dass der Punkt in keiner Plate enthalten ist
-        if not selected_plate:
-            raise Exception("Point is not contained in any Plate")
-
-    def split(self, point:np.ndarray[int|float, int|float]|None = None) -> None:
-        if point is None:
-            point = np.array((rand.uniform(0, self.size[0]), rand.uniform(0, self.size[1])))
-            # wurde kein Punkt spezifiziert, generiert das Programm einen zufälligen Punkt
-
-        selected_plate = self.getPlate(point)
-
-        # die alte Platte wird gesplittet. Dies gibt 2 neue Platten zurück.
-        new_plates = selected_plate.split(point, self.age)
-
-        # die alte Platte wird durch die neuen Platten ersetzt
-        self.plates.remove(selected_plate)
-        self.plates.extend(new_plates)
-
-        self.age-= rand.uniform(0, self.age/2)
-
-    def getPointHeight(self, point:np.ndarray[int|float, int|float]) -> float|int:
-        pass

@@ -1,54 +1,38 @@
-# from scipy.spatial import Voronoi, voronoi_plot_2d
-# import assets
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from random import randint
-# from shapely.geometry import Polygon, Point
-#
-# map = assets.Map((200, 200))
-# V = Voronoi([[randint(0, 200), randint(0, 200)] for i in range(50)], qhull_options="Qc")
-# for i in range(len(V.points)):
-#     region = tuple(tuple(V.vertices[j]) for j in V.regions[tuple(V.point_region)[i]])
-#     point = V.points[i]
-#     if not Polygon(region).contains(Point(point)):
-#         print("="*40+f"\n{i}")
-#         print(region, point)
-#         # map.fill_polygon(*region, val=i)
-#
-# for i in V.vertices:
-#     map.blob(tuple(int(j) for j in i), 2)
-#
-# # for reg in V.regions:
-# #     print([tuple(V.ridge_points[point]) for point in reg])
-# #
-# # fig = voronoi_plot_2d(V)
-#
-# # print(len(V.point_region), len(set(V.point_region)))
-#
-# #
-# A = np.zeros([200, 200])
-# for y in range(0, 200):
-#     for x in range(0, 200):
-#         value = map[x, y].val
-#         color = int((value + 1))
-#         A[x, y] = color
-#
-# voronoi_plot_2d(V)
-# plt.imshow(A)
-# plt.show()
-
-import numpy as np
-points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
-
-                   [2, 0], [2, 1], [2, 2]])
-
 from scipy.spatial import Voronoi, voronoi_plot_2d
-
-V = Voronoi(points)
+import numpy as np
 import matplotlib.pyplot as plt
+from random import randint, seed
+from shapely.geometry import Polygon, Point
+import random as rand
+from world import World
 
-fig = voronoi_plot_2d(V)
+rand.seed(3)
 
-print(V.point_region, tuple(tuple(tuple(V.vertices[i]) for i in j) for j in V.regions))
+A = World((50, 50))
+fig, ax = plt.subplots(1, 1)
+points = [(A.size[0]/2, A.size[1]/2)] + [tuple((rand.uniform(0, A.size[0]), rand.uniform(0, A.size[1]))) for i in range(20)]
+for i in range(5):
+    point = np.array(points[i+1])
+    A.split(point)
 
+Map = A.render_world()
+
+plt.imshow(Map)
+
+for plate in A.plates:
+    plate_poly = plt.Polygon(plate.vertices, fill=False)
+    ax.add_patch(plate_poly)
+    x, y = plate.Plate_point
+    dx, dy = plate.drift_vector
+    # plt.arrow(x, y, dx * 5, dy * 5, width=.8, edgecolor=None, linewidth=None)
+
+data = dict()
+for plate in A.plates:
+    data[points.index(tuple(plate.Plate_point))] = {"Point": plate.Plate_point,
+                                             "PType": plate.PType,
+                                             "vector": plate.drift_vector,
+                                             "verts": plate.vertices}
+
+print("\n", list(list(i) for i in Map))
 plt.show()
+

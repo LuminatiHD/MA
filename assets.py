@@ -1,11 +1,32 @@
+from __future__ import annotations
+# in order to allow class function argument specifiers to be its parent class
+
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, Point
 from typing import Iterable, Literal
 import numpy as np
 import copy
+import random as rand
 
 
 def getborderpointbyvector(p: np.ndarray[int | float, int | float],
+                           v: np.ndarray[int | float, int | float],
+                           polygon: Polygon, threshold: float = 0.01) -> tuple[np.ndarray[int | float, int | float], np.ndarray[int | float, int | float], np.ndarray[int | float, int | float]]:
+    # wenn der Punkt am Rand des Polygons ist, verschiebt man den etwas zur Mitte des Polygons.
+    if polygon.touches(Point(p)):
+        dvector = np.array(polygon.centroid)
+        p = p+threshold*2*(dvector / np.linalg.norm(dvector))
+
+    for i in range(len(polygon.exterior.coords)):
+        E1 = polygon.exterior.coords[i - 1]
+        E2 = polygon.exterior.coords[i]
+        Q = getPointOnLinesegment(p, v, np.array(E1), np.array(E2))
+        if Q is not None:
+            if np.array(Q-p).dot(v) >= 0:
+                return Q, np.array(E1), np.array(E2)
+
+
+def approaching_polygon_border(p: np.ndarray[int | float, int | float],
                            v: np.ndarray[int | float, int | float],
                            polygon: Polygon, threshold: float = 0.01) -> np.ndarray[int | float, int | float]:
     """
@@ -16,15 +37,15 @@ def getborderpointbyvector(p: np.ndarray[int | float, int | float],
     :param v: Die Richtung, in welcher der Zielpunkt R liegt
     :param polygon: Das Polygon PG an welcher Grenze der Zielpunkt liegt
     :param threshold: wie nahe die Ausgabe am richtigen PUnkt liegen soll
-    :return:
     """
     delta = 1
     s = 0
+    v=v/np.linalg.norm(v)
 
-    # Teil 1: der Vektor wird so lange verlängert bis er ausserhalb des Polygons ist.
+    # Teil 1: der Vektor wird so lange verlängert, bis er ausserhalb des Polygons liegt.
     new_s = s + delta
     new_p = p+v*new_s
-    while polygon.contains(Point(new_p)):
+    while (polygon.contains(Point(new_p)) or polygon.touches(Point(new_p))):
         new_s = s+delta
         new_p = p+v*new_s
 
@@ -32,13 +53,13 @@ def getborderpointbyvector(p: np.ndarray[int | float, int | float],
             break
         else:
             s = new_s
-    # Teil 2: der Vektor nähert sich dem Resultat
+    # Teil 2: der Vektor wird dem Resultat angenähert
     while delta>threshold:
         delta/=2
-        print(delta)
+
         new_s = s+delta
         new_p = p+v*new_s
-        if polygon.contains(Point(new_p)):
+        if polygon.contains(Point(new_p)) or polygon.touches(Point(new_p)):
             s = new_s
     return new_p
 
@@ -57,7 +78,11 @@ def getPointOnLinesegment(P: np.ndarray[int | float, int | float],
     P1 = P
     P2 = P+v
 
-    u = ((P1[0]-R1[0])*(P1[1]-P2[1])-(P1[0]-P2[0])*(P1[1]-R1[1])) / ((P1[0]-P2[0])*(R1[1]-R2[1]) - (R1[0]-R2[0])*(P1[1]-P2[1]))
+    numerator = ((P1[0]-R1[0])*(P1[1]-P2[1])-(P1[0]-P2[0])*(P1[1]-R1[1]))
+    divisor = ((P1[0]-P2[0])*(R1[1]-R2[1])-(R1[0]-R2[0])*(P1[1]-P2[1]))
+    if divisor == 0:
+        return None
+    u = numerator / divisor
     # existiert ein Intersection-point Q zwischen R1-R2 und Strahl P Richtung v, dann ist dieser Punkt Q = R1+u*(R2-R1).
     # falls der Punkt Q zwischen R1 und R2 liegt, dann ist folglich 0<=u<=1.
     # fals demnach u>1 oder u<0, dann liegt Q nicht auf dem Liniensegment R1-R2
@@ -70,9 +95,8 @@ def getPointOnLinesegment(P: np.ndarray[int | float, int | float],
 def direction_preference(options:Iterable[np.ndarray[int | float, int | float]],
                          ideal:np.ndarray[int | float, int | float]) -> np.ndarray[int | float, int | float]:
     """Nimmt von Optionen Vektor opt_1 und opt_2 diese, die am ehesten dem Vektor v gleicht/in die gleiche Richtung zeigt.
-    :param opt_1, opt_2: oben genannte Optionen, beides Vektoren
+    :param options: oben genannte Optionen, alles Vektoren
     :param ideal: Der ideale Vektor V"""
-
 
     options_key = dict()
     for opt in options:
@@ -96,53 +120,20 @@ def direction_preference(options:Iterable[np.ndarray[int | float, int | float]],
     # options_key[norm] gibt den originalen, nicht-normalisierter Vektor zurück.
 
 
-    def changeval(self, newval:float | int):
-        """change the value of the pixel to a given parameter"""
-        self.val = newval
+def organic_border(start_P:np.ndarray, end_P:np.ndarray, polygon:Polygon) -> tuple[tuple[int|float, int|float], ...]:
+    """WIP:
+    gibt ein Pfad in der form eines tuples von Punkten zurück, der etwas interessanter/organischer aussieht als
+    start_P nach end_P
+    :param polygon: wird gebraucht, um zu verhindern, dass die Grenze eine der Ecken des Polygons überschneiden könnte."""
+
+    return tuple(start_P), tuple(end_P)
 
 
-class Map():
-    def __init__(self, size:tuple[int, int]):
-        self.__vals = tuple(tuple(Pixel((x, y)) for x in range(size[0])) for y in range(size[1]))
-        self.__size = size
-        self.__xlen = size[0]
-        self.__ylen = size[1]
+def normalize_vector(v:np.ndarray[int|float, int|float,]) -> np.ndarray[float|float]:
+    """normalisiert einen gegebenen Vektor (ausgegebener Vektor zeigt in die gleiche Richtung wie der Ursprüngliche, aber hat eine Länge von 1"""
+    len_v = np.linalg.norm(v)
+    if len_v == 0:
+        return v
+    return v/len_v
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"({self.__size})"
-
-    def __getitem__(self, pos:tuple[int, int]) -> Pixel:
-        if not 1<len(pos):
-            raise TypeError("A point needs 2 coordinate values")
-        else:
-            # if both the start and stop value are given [x:y], then we will just return a point
-            if abs(pos[0]) < 200 and abs(pos[0]) < 200:
-                return self.__vals[pos[1]][pos[0]]
-            else:
-                return Pixel(pos, val=0)
-
-    def getvals(self):
-        return self.__vals
-
-    def blob(self, xy:tuple[int, int], radius:int | float = 1):
-        # if all(xy[i] > self.__size[i] for i in range(2)):
-        #     raise TypeError("blob coordinates are outside the map space")
-        x_rel, y_rel = xy
-        for row in self.__vals[max(y_rel-radius, 0):min(y_rel + radius, self.__ylen)]:
-            # the max() and min() set a boundary for the loop, in order to avoid over/underflow
-            for pixel in row[max(x_rel-radius, 0):min(x_rel + radius, self.__xlen)]:
-                if (pixel.x-x_rel)**2 + (pixel.y-y_rel)**2 < radius**2:
-                    pixel.changeval(64)
-
-    def fill_polygon(self, *args:tuple[int, int], val:int):
-        """creates a polygon from the points specified, and then fills every point in that
-        polygon with the given value."""
-        p = Polygon(shell=args)
-        x_vals = tuple(int(i[0]) for i in args)
-        y_vals = tuple(int(i[1]) for i in args)
-        # iterate only over the pixel in the bounding box
-        for x in range(max(min(x_vals), 0), min(max(x_vals), self.__xlen)):
-            for y in range(max(min(y_vals), 0), min(max(y_vals), self.__ylen)):
-                if p.contains(Point(x, y)):
-                    self[x, y].val = val
 
