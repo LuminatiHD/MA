@@ -3,14 +3,13 @@ from __future__ import annotations
 import numpy as np
 from typing import Literal, Iterable
 from shapely.geometry import Polygon, Point
-import random as rand
-from assets import getPointOnLinesegment, organic_border
+from assets import getPointOnLinesegment
 from math import pi
 
 
-def create_rays(amount:int) -> tuple[np.ndarray]:
+def create_rays(amount: int) -> tuple[np.ndarray]:
     """Gibt ein tuple zurück mit n Vektoren, die einen Punkt umkreisen.
-    :param amount: die Menge der Vektoren"""
+    :param amount: die Anzahl der Vektoren"""
     out = list()
     phi = 2*pi/amount
     for i in range(amount):
@@ -22,10 +21,10 @@ def create_rays(amount:int) -> tuple[np.ndarray]:
 
 class Plate:
     """Ist definiert als eine liste an vertices, einem PlatePoint, sowie einem drift-vektor"""
-    def __init__(self, point: np.ndarray[int, int], vertices: Iterable[tuple[int, int]],
+    def __init__(self, point: np.ndarray[int | float, int | float], vertices: Iterable[tuple[int | float, int | float]],
                  PType: Literal["K", "O"], drift: np.array = np.array((0, 0))):
 
-        self.vertices = tuple(tuple(i) for i in vertices) # gibt man direkt np.arrays ins tuple, dann funktioniert tuple.index nicht mehr
+        self.vertices = tuple(tuple(i) for i in vertices)  # gibt man direkt np.arrays ins tuple, dann funktioniert tuple.index nicht mehr
         self.Plate_point = point
         self.drift_vector = drift
         if not type(PType) is str or not PType.upper() in ["K", "O"]:
@@ -36,7 +35,7 @@ class Plate:
     def __repr__(self):
         return str(self.vertices)
 
-    def split(self, point:np.ndarray[int|float, int|float], t:float)  -> tuple[Plate, Plate]:
+    def split(self, point: np.ndarray[int | float, int | float], t: float) -> tuple[Plate, Plate]:
         """Trennt die Platte entlang einer Mittelsenkrechte zwischen dem Plattenpunkt und dem gegebenen punkt point.
         Platte bleibt intakt, gibt 2 Platten zurück
         :param point: siehe oben
@@ -46,23 +45,22 @@ class Plate:
         P = self.Plate_point
         R = point
         midpoint = R + (P-R)*0.5
-        vector:np.ndarray[int|float, int|float] = P-R
+        vector: np.ndarray[int | float, int | float] = P-R
         # das rotiert den Vektor um 90°
         vector[0], vector[1] = -vector[1], vector[0]
 
-        # loopt über alle Paare von Punkten -> Ecken, und sucht, welche Ecken die Mittelsenkrechte schneidet.
+        # loopt über alle Paare von Punkten → Ecken, und sucht, welche Ecken die Mittelsenkrechte schneidet.
         Border_to_Poly = dict()
         for i in range(len(self.vertices)):
             E1 = self.vertices[i-1]
             E2 = self.vertices[i]
             Q = getPointOnLinesegment(midpoint, vector, np.array(E1), np.array(E2))
-            if len(Border_to_Poly)<2 and Q is not None:
+            if len(Border_to_Poly) < 2 and Q is not None:
                 # np.arrays sind mutable -> nicht hashable -> kann man nicht als key gebrauchen
                 Border_to_Poly[tuple(Q)] = (E1, E2)
 
         # Die Platten werden wieder zusammengesetzt
-        Border = organic_border(np.array(list(Border_to_Poly.keys())[0]), np.array(list(Border_to_Poly.keys())[1]), Polygon(self.vertices))
-
+        Border = tuple(Border_to_Poly.keys())
         start_P = Border[0]
         end_P = Border[-1]
         Plate1 = []
@@ -87,7 +85,7 @@ class Plate:
             # der Walker läuft vom einen Ende der Plattengrenze über die Vertices der alten Platte zum anderen Ende.
             # bei jedem Schritt schaut es nach, ob es an einem der Eckpunkte gelangt ist, zwischen welchen sich der Endpunkt befindet.
             # wenn das der Fall ist, weisst der Walker, dass er direkt vom Endpunkt über den Pfad definiert in der Liste "Border" wieder hin zum Startpunkt kann,
-            # um damit seine Rundtour beendet zu haben -> das Polygon vervollständigt hat.
+            # um damit seine Rundtour beendet zu haben, → das Polygon vervollständigt hat.
             # Der Walker läuft jedoch noch weiter, um auch die zweite Hälfte der Platte zu definieren.
 
             # für a in b-statements darf das objekt in question auch nicht ein np.array sein, da np.array == np.array nicht ein bool, sondern ein bool-array zurückgibt.
@@ -100,12 +98,12 @@ class Plate:
                     Plate1.extend(Border[::-1])
 
                 Plates.append(Plate1)
-                start_P, end_P = end_P, start_P # nachdem man vom einen Ende zum anderen gekommen ist, muss man auch noch vom anderen Ende zum einen kommen.
+                start_P, end_P = end_P, start_P  # nachdem man vom einen Ende zum anderen gekommen ist, muss man auch noch vom anderen Ende zum einen kommen.
                 Plate1 = []
 
             # der Walker geht ein Schritt weiter. Falls er am Ende der Liste angelangt ist, kann er einfach hinten wieder anfangen.
-            index+=direction
-            walker = self.vertices[index%len(self.vertices)]
+            index += direction
+            walker = self.vertices[index % len(self.vertices)]
 
         # die Platten werden fertiggestellt. Dazu werden auch den jeweiligen Driftvektor und den Plattenpunkt zugeteilt
         out = []
@@ -124,6 +122,3 @@ class Plate:
             out.append(Plate(point=plate_point, vertices=plate_vertices, PType=self.PType, drift=drift_vector+self.drift_vector))
 
         return tuple((out[0], out[1]))
-
-
-
