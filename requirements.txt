@@ -1,5 +1,3 @@
 numpy~=1.22.3
-Shapely~=1.8.2
+Shapely==1.8.2
 matplotlib~=3.5.2
-opensimplex~=0.4.2
-scipy~=1.8.0
