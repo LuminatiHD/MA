@@ -12,7 +12,8 @@ def get_height_func(x, plate1: plates.Plate, plate2: plates.Plate,
     :param shared_border: Definiert die Grenze, welche plate1 von plate2 separiert."""
 
     u1, u2 = get_drift_vector_relations(plate1, plate2, shared_border)
-    T = get_T_value(u1, u2) * .05
+    T = get_T_value(u1, u2) * .005
+    x *= .05
     if is_div(plate1, plate2, u1, u2):
         if plate1.PType == "K":
             return K_div_K(T, x)
@@ -37,14 +38,18 @@ def get_drift_vector_relations(plate1: plates.Plate, plate2: plates.Plate,
                                shared_border: tuple[np.ndarray[int | float, int | float],
                                                     np.ndarray[int | float, int | float]]) -> tuple[np.ndarray[int | float, int | float], np.ndarray[int | float, int | float]]:
     """Berechnet, wie die Driftvektoren der Platten :param plate1 und :param plate2 relativ zueinander stehen.
-    :param shared_border: definiert die Grenze, die plate1 und plate2 teilen."""
+    :param shared_border: definiert die Grenze, die plate1 und plate2 teilen.
+    :param plate1: oben definiert
+    :param plate2: oben definiert"""
 
     s = shared_border[0] - shared_border[1]
+    # rotieren um 90°
+    s = np.array([-s[1], s[0]])
     v1 = plate1.drift_vector
     v2 = plate2.drift_vector
 
-    u1 = s * (v1.dot(s))/np.linalg.norm(s)
-    u2 = s * (v2.dot(s)) / np.linalg.norm(s)
+    u1 = s * (v1.dot(s))/(np.linalg.norm(s)**2)
+    u2 = s * (v2.dot(s)) / (np.linalg.norm(s)**2)
 
     return u1, u2
 
@@ -60,13 +65,13 @@ def is_div(plate1: plates.Plate, plate2: plates.Plate, rel_vec_1: np.ndarray[int
     """bestimmt, ob plate1 und plate2 divergieren oder konvergieren. Falls sie divergieren, gibt die Funktion True zurück."""
     if np.linalg.norm(rel_vec_1) > np.linalg.norm(rel_vec_2):
         u = rel_vec_1
-        if u.dot(np.array(plate2.Plate_point - plate1.Plate_point)) > 0:
+        if u.dot(np.array(plate1.Plate_point - plate2.Plate_point)) > 0:
             return True
         else:
             return False
     else:
         u = rel_vec_2
-        if u.dot(plate1.Plate_point - plate2.Plate_point) > 0:
+        if u.dot(plate2.Plate_point - plate1.Plate_point) > 0:
             return True
         else:
             return False

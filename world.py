@@ -75,7 +75,7 @@ class World:
                 neigh_plate = self.getPlate(Q)
 
             distance, weight = heightfunc.get_rayvector_components(P, Q, (E1, E2))
-            values.append((heightfunc.get_height_func(abs(distance)*.25, homeplate, neigh_plate, (E1, E2)), np.pi-weight))
+            values.append((heightfunc.get_height_func(abs(distance)*.1, homeplate, neigh_plate, (E1, E2)), np.pi-weight))
 
         # np.sum() is faster than sum()
         return np.sum((i[0])*i[1] for i in values) / np.sum(i[1] for i in values)

@@ -2,7 +2,6 @@
 from __future__ import annotations
 # in order to allow class function argument specifiers to be its parent class
 from shapely.geometry import Polygon, Point
-from typing import Iterable
 import numpy as np
 
 

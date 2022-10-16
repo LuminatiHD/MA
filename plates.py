@@ -40,7 +40,7 @@ class Plate:
         Platte bleibt intakt, gibt 2 Platten zurück
         :param point: siehe oben
         :param t: gibt an, wann die Platte gebrochen ist."""
-        if not Polygon(self.vertices).contains(Point(point)):
+        if not (Polygon(self.vertices).contains(Point(point)) or Polygon(self.vertices).touches(Point(point))):
             raise ValueError("Point is located outside the Plate.")
         P = self.Plate_point
         R = point
@@ -110,7 +110,7 @@ class Plate:
         for plate_vertices in Plates:
             # Die Zuteilung des Plattenpunktes ist relativ einfach, da sich der Plattenpunkt
             # ja innerhalb der Platte befinden muss.
-            if Polygon(plate_vertices).contains(Point(P)):
+            if Polygon(plate_vertices).contains(Point(P)) or Polygon(plate_vertices).touches(Point(P)):
                 plate_point = P
             else:
                 plate_point = R
